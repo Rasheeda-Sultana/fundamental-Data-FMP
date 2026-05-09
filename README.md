@@ -1,5 +1,5 @@
 
-# fundamentalDataFMP
+# Fundamental Stock Data Analysis & Financial Ratio Scanner
 
 Python scripts for retrieving, analyzing, and sorting stock fundamental data using the Financial Modeling Prep (FMP) API and the `fundamentalanalysis` Python wrapper.
 
