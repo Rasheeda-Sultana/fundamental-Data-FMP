@@ -1,444 +1,205 @@
 
-# Fundamental Stock Data Analysis & Financial Ratio Scanner
+# polygonFundamentalScanner
 
-Python scripts for retrieving, analyzing, and sorting stock fundamental data using the Financial Modeling Prep (FMP) API and the `fundamentalanalysis` Python wrapper.
+Fundamental Analysis Scanner in Python using the Polygon.io API.
 
-This project demonstrates how to collect company profiles, financial statements, key metrics, financial ratios, growth data, analyst ratings, discounted cash flow values, and historical stock information programmatically using Python.
-
----
-
-# Features
-
-- Retrieve publicly traded company data from FMP
-- Access stock listings across multiple exchanges
-- Analyze financial statements and key metrics
-- Fetch analyst ratings and DCF valuations
-- Retrieve balance sheet, income statement, and cash flow data
-- Screen and sort companies using financial ratios
-- Download historical stock and dividend data
-- Perform automated equity research workflows
+This project automates financial statement data extraction, fundamental ratio analysis, stock screening, and CSV-based benchmarking workflows using Polygon.io financial data and Python.
 
 ---
 
-# Project Structure
+## Repository Structure
 
 ```bash
-fundamentalDataFMP/
+polygonFundamentalScanner/
 │
-├── README.md
-├── fmpSecret.py
-├── getFundamentalDataFMP.py
-└── fundamentalDataSortFMP.py
+├── fs_bulk_downloader.py
+├── fs_scanner.py
+├── fs_ticker_list.py
+└── polygonAPIkey.py
 ```
 
 ---
 
-# Installation
+## Overview
 
-Clone the repository:
+The project consists of three main workflows:
 
-```bash
-git clone https://github.com/AdamGetbags/fundamentalDataFMP.git
-```
-
-Move into the project directory:
-
-```bash
-cd fundamentalDataFMP
-```
-
-Install required dependencies:
-
-```bash
-pip install pandas fundamentalanalysis
-```
+1. Generate a stock ticker list using Polygon.io.
+2. Download and store company financial statement data in CSV format.
+3. Calculate and rank companies based on financial ratios.
 
 ---
 
-# Setup
+## Files
 
-Create a file named `fmpSecret.py` and add your Financial Modeling Prep API key:
+### polygonAPIkey.py
+
+Stores the Polygon.io API key used for authentication.
 
 ```python
 # -*- coding: utf-8 -*-
 """
-
-Get fundamental data FMP API secrets
-@author: Adam Getbags
-
+polygon.io API secrets
 """
 
-fmpSecret = 'apiKeyGoesHere'
-```
-
-Get your API key from:
-
-https://financialmodelingprep.com/
-
----
-
-# File Overview
-
-## 1. fmpSecret.py
-
-Stores the Financial Modeling Prep API key used for authentication.
-
----
-
-## 2. getFundamentalDataFMP.py
-
-Retrieves detailed company fundamental data including:
-
-- Company profile
-- Dividend information
-- Beta values
-- Analyst ratings
-- Discounted cash flow (DCF)
-- Enterprise value
-- Financial statements
-- Key metrics
-- Financial ratios
-- Growth metrics
-- Historical stock prices
-- Dividend history
-
-### Full Code
-
-```python
-# -*- coding: utf-8 -*-
-"""
-
-Get fundamental data
-@author: Adam Getbags
-
-Data provided by Financial Modeling Prep
-https://site.financialmodelingprep.com/developer/docs/
-
-Python API wrapper by
-https://github.com/JerBouma/FundamentalAnalysis
-
-"""
-
-# pip install fundamentalanalysis
-
-# import modules
-import pandas as pd
-import fundamentalanalysis as fa
-from fmpSecret import fmpSecret as api_key
-
-ticker = "AAPL"
-
-# show the available tickers
-allTickers = fa.available_companies(api_key)
-
-# get unique exchange names
-allExchanges = allTickers.exchangeShortName.unique()
-print(allExchanges)
-
-# get all ticker data on single exchange
-tickersOnExchange = allTickers[
-    allTickers.exchangeShortName == 'NASDAQ'
-]
-print(tickersOnExchange)
-
-# get all ticker data on multiple exchanges
-tickersOnExchanges = allTickers[
-    (allTickers.exchangeShortName == 'NASDAQ') |
-    (allTickers.exchangeShortName == 'NYSE') |
-    (allTickers.exchangeShortName == 'AMEX')
-]
-print(tickersOnExchanges)
-
-# accessing the stock symbols
-symbols = list(tickersOnExchanges.index)
-print(symbols)
-
-# collect general company information
-profile = fa.profile(ticker, api_key)
-print(profile)
-
-# get last dividend
-lastDiv = profile.loc['lastDiv'][0]
-print(lastDiv)
-
-# get beta
-beta = profile.loc['beta'][0]
-print(beta)
-
-# collect recent company quotes
-quotes = fa.quote(ticker, api_key)
-print(quotes)
-
-# collect market cap and enterprise value
-enterprise_value = fa.enterprise(ticker, api_key)
-
-# get specific year enterprise value
-evByYear = enterprise_value['2021'].loc['enterpriseValue']
-
-# show recommendations of analysts
-ratings = fa.rating(ticker, api_key)
-print(ratings)
-
-# obtain DCFs over time
-dcf_annually = fa.discounted_cash_flow(
-    ticker,
-    api_key,
-    period="annual"
-)
-print(dcf_annually)
-
-# collect the balance sheet statements
-balance_sheet_annually = fa.balance_sheet_statement(
-    ticker,
-    api_key,
-    period="annual"
-)
-
-# individual balance sheet items by year
-print(list(balance_sheet_annually['2021'].index))
-
-# collect the income statements
-income_statement_annually = fa.income_statement(
-    ticker,
-    api_key,
-    period="annual"
-)
-
-# individual income statement items by year
-print(list(income_statement_annually['2021'].index))
-print('- - -')
-print(income_statement_annually['2021'].loc['netIncomeRatio'])
-
-# collect the cash flow statements
-cash_flow_statement_annually = fa.cash_flow_statement(
-    ticker,
-    api_key,
-    period="annual"
-)
-
-# individual cash flow items by year
-print(list(cash_flow_statement_annually['2021'].index))
-
-# free cash flow
-fcf = cash_flow_statement_annually['2021'].loc['freeCashFlow']
-print(fcf)
-
-# show key metrics
-key_metrics_annually = fa.key_metrics(
-    ticker,
-    api_key,
-    period="annual"
-)
-print(key_metrics_annually)
-
-# return on invested capital
-roic = key_metrics_annually['2021'].loc['roic']
-print(roic)
-
-# show financial ratios
-financial_ratios_annually = fa.financial_ratios(
-    ticker,
-    api_key,
-    period="annual"
-)
-
-print(financial_ratios_annually['2021'])
-
-ccc = financial_ratios_annually['2021'].loc[
-    'cashConversionCycle'
-]
-print(ccc)
-
-# show company growth
-growth_annually = fa.financial_statement_growth(
-    ticker,
-    api_key,
-    period="annual"
-)
-print(growth_annually)
-
-# download general stock data
-stock_data = fa.stock_data(
-    ticker,
-    period="max",
-    interval="1d"
-)
-
-# download detailed stock data
-stock_data_detailed = fa.stock_data_detailed(
-    ticker,
-    api_key,
-    begin="2000-01-01",
-    end="2020-01-01"
-)
-print(stock_data_detailed.columns)
-
-# download dividend history
-dividends = fa.stock_dividend(
-    ticker,
-    api_key,
-    begin="2000-01-01",
-    end="2020-01-01"
-)
-print(dividends.adjDividend)
+polygonAPIkey = ''
 ```
 
 ---
 
-## 3. fundamentalDataSortFMP.py
+### fs_ticker_list.py
 
-Screens and sorts companies based on financial ratios.
+Retrieves active common stock tickers from Polygon.io and creates a ticker list.
 
-Current implementation:
+#### Functionality
 
-- Retrieves NASDAQ-listed stocks
-- Collects annual net profit margin data
-- Stores results in a Pandas DataFrame
-- Sorts companies by profitability
-- Displays top-performing companies
+- Connects to Polygon.io using the API key
+- Retrieves active stock tickers
+- Sorts ticker symbols alphabetically
+- Exports ticker symbols to `symbol_list.csv`
 
-### Full Code
+#### Output
 
-```python
-# -*- coding: utf-8 -*-
-"""
-
-Get fundamental data sorting
-@author: Adam Getbags
-
-Data provided by Financial Modeling Prep
-https://site.financialmodelingprep.com/developer/docs/
-
-Python API wrapper by
-https://github.com/JerBouma/FundamentalAnalysis
-
-"""
-
-# import modules
-import pandas as pd
-import fundamentalanalysis as fa
-from fmpSecret import fmpSecret as api_key
-
-# empty data structure
-bulkData = pd.DataFrame(
-    columns=['symbol', 'npmData']
-)
-
-# show the available tickers
-allTickers = fa.available_companies(api_key)
-
-# get unique exchange names
-allExchanges = allTickers.exchangeShortName.unique()
-print(allExchanges)
-
-# get all ticker data on single exchange
-companiesOnExchange = allTickers[
-    (allTickers.exchangeShortName == 'NASDAQ') &
-    (allTickers.type == 'stock')
-]
-print(companiesOnExchange[:25])
-
-# accessing the stock symbols
-symbols = list(companiesOnExchange[:25].index)
-print(symbols)
-
-# for each symbol in list
-for i in symbols:
-
-    # request most recent npm data
-    financial_ratios_annually = fa.financial_ratios(
-        i,
-        api_key,
-        period="annual"
-    )
-
-    # get net profit margin data
-    npmData = financial_ratios_annually[
-        financial_ratios_annually.columns[0]
-    ].loc['netProfitMargin']
-
-    # save to DataFrame
-    bulkData.loc[len(bulkData)] = [i, npmData]
-
-# sort DataFrame
-bulkData = bulkData.sort_values(
-    'npmData',
-    ascending=False,
-    ignore_index=True
-)
-
-# get top 10 companies by net profit margin
-bulkData.head(10)
+```text
+symbol_list.csv
 ```
 
 ---
 
-# Example Financial Metrics
+### fs_bulk_downloader.py
 
-The project can analyze:
+Downloads company financial statement data for each ticker in the symbol list.
 
-- Net Profit Margin
-- Return on Invested Capital (ROIC)
-- Cash Conversion Cycle (CCC)
-- Free Cash Flow
-- Enterprise Value
-- Revenue Growth
-- Earnings Growth
-- Dividend Data
-- Market Capitalization
-- Historical Price Data
+#### Functionality
+
+- Reads ticker symbols from `symbol_list.csv`
+- Requests financial statement data from Polygon.io
+- Extracts company information and filing details
+- Flattens nested financial statement data structures
+- Saves financial statement data as CSV files
+
+#### Output
+
+```text
+AAPL.csv
+MSFT.csv
+GOOGL.csv
+...
+```
+
+Each CSV file contains:
+
+- Symbol
+- CIK
+- Company Name
+- Filing Date
+- Fiscal Period
+- Fiscal Year
+- Start Date
+- End Date
+- Source Filing URLs
+- Financial Statement Line Items
 
 ---
 
-# Example Usage
+### fs_scanner.py
 
-Run the main fundamental data script:
+Calculates and ranks companies using financial statement data.
+
+#### Functionality
+
+- Reads downloaded financial statement CSV files
+- Calculates Debt-to-Equity Ratio
+
+```text
+Debt-to-Equity Ratio =
+Total Liabilities / Total Equity
+```
+
+- Filters data for:
+  - Fiscal Period: Q3
+  - Fiscal Year: 2024
+- Removes missing values
+- Sorts companies by Debt-to-Equity Ratio
+
+#### Output
+
+```text
+symbol | debt_to_equity_ratio
+```
+
+Sorted from lowest to highest Debt-to-Equity Ratio.
+
+---
+
+## Requirements
+
+Install required packages:
 
 ```bash
-python getFundamentalDataFMP.py
+pip install polygon-api-client
+pip install pandas
+pip install plotly
 ```
 
-Run the financial ratio sorting script:
+---
+
+## Usage
+
+### Step 1: Configure API Key
+
+Add your Polygon.io API key in:
+
+```python
+polygonAPIkey = 'YOUR_API_KEY'
+```
+
+---
+
+### Step 2: Generate Ticker List
 
 ```bash
-python fundamentalDataSortFMP.py
+python fs_ticker_list.py
+```
+
+Creates:
+
+```text
+symbol_list.csv
 ```
 
 ---
 
-# Data Sources
+### Step 3: Download Financial Statement Data
 
-Financial data provided by:
+```bash
+python fs_bulk_downloader.py
+```
 
-- Financial Modeling Prep API  
-  https://site.financialmodelingprep.com/developer/docs/
-
-Python wrapper used:
-
-- FundamentalAnalysis  
-  https://github.com/JerBouma/FundamentalAnalysis
+Downloads financial statement data and saves company CSV files.
 
 ---
 
-# Future Improvements
+### Step 4: Run Financial Ratio Scanner
 
-- Export results to CSV or Excel
-- Add visualization dashboards
-- Include technical indicators
-- Add multi-factor stock screening
-- Add portfolio analysis tools
-- Add backtesting functionality
+```bash
+python fs_scanner.py
+```
+
+Calculates Debt-to-Equity Ratios and ranks companies.
 
 ---
 
-# Disclaimer
+## Technologies Used
 
-This project is intended for educational and research purposes only.
+- Python
+- Pandas
+- Polygon.io API
+- polygon-api-client
 
-It does not constitute financial advice, investment recommendations, or trading guidance.
+---
 
+## Author
 
-
-
-README and GitHub documentation adapted for project presentation.
+Rasheeda SUltana
 ````
